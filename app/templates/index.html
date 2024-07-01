@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Face Recognition{% endblock %}
+<style>
+    #confirmationPopup {
+        display: none;
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        padding: 20px;
+        background: white;
+        box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+</style>
+{% block content %}
+<h1>Employee Working Hours Tracker</h1>
+<video id="videoElement" width="640" height="480" autoplay></video>
+<canvas id="canvas" style="display:none;"></canvas>
+
+<h1>Active Employee(s)</h1>
+
+<ul id="activeEmployeesList"></ul>
+
+<div id="confirmationPopup">
+    <h3>Confirm Employee</h3>
+    <p id="employeeName"></p>
+    <img id="employeePhoto" src="" alt="Employee Photo"><br>
+    <button id="confirmButton">Confirm</button>
+    <button id="rejectButton">Reject</button>
+</div>
+
+<script src="/static/video_stream.js"></script>
+{% endblock %}
+
+
