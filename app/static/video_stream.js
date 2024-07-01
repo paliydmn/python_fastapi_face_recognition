@@ -1,30 +1,125 @@
 const video = document.getElementById('videoElement');
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
-const activeEmployeesList = document.getElementById('activeEmployeesList');
-document.getElementById('confirmationPopup').style.display = 'none';
+const confirmationPopup = document.getElementById('confirmationPopup');
+const confirmButton = document.getElementById('confirmButton');
+const rejectButton = document.getElementById('rejectButton');
 
-// Function to handle showing the confirmation popup
-function showConfirmationPopup(employee) {
-    document.getElementById('employeeName').textContent = employee.employee_name;
-    document.getElementById('employeePhoto').src = `/static/uploads/${employee.employee_photo}`;
-    document.getElementById('confirmationPopup').style.display = 'block';
+let lastImageData;
+let motionDetected = false;
 
-    document.getElementById('confirmButton').onclick = async () => {
-        document.getElementById('confirmationPopup').style.display = 'none';
-        await fetch('/confirm_employee', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ employee_id: employee.employee_id })
-        });
-        video.play(); // Continue the video stream
-        updateActiveEmployees(); // Update the active employees list
-    };
+// Setup video stream
+navigator.mediaDevices.getUserMedia({
+        video: true
+    })
+    .then((stream) => {
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+            video.play();
+            setTimeout(() => {
+                requestAnimationFrame(checkForMotion);
+            }, 500); // Delay to ensure video is ready
+        };
+    })
+    .catch((err) => {
+        console.error("Error accessing camera: " + err);
+    });
 
-    document.getElementById('rejectButton').onclick = () => {
-        document.getElementById('confirmationPopup').style.display = 'none';
-        video.play(); // Continue the video stream
-    };
+function checkForMotion() {
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        if (lastImageData) {
+            const diff = detectMotion(lastImageData.data, imageData.data);
+
+            //Motion Threshold: Adjust the 800 threshold in the detectMotion function 
+            //based on your environment and sensitivity requirements.
+            if (diff > 800) { // Motion threshold
+                if (!motionDetected) {
+                    motionDetected = true;
+                    setTimeout(() => {
+                        sendFrameForRecognition(imageData);
+                        motionDetected = false;
+                    }, 1000); // Delay between checks
+                }
+            }
+        }
+        lastImageData = imageData;
+    }
+
+    requestAnimationFrame(checkForMotion);
+}
+
+function detectMotion(data1, data2) {
+    let diff = 0;
+    for (let i = 0; i < data1.length; i += 4) {
+        const r = data1[i] - data2[i];
+        const g = data1[i + 1] - data2[i + 1];
+        const b = data1[i + 2] - data2[i + 2];
+        diff += Math.abs(r) + Math.abs(g) + Math.abs(b);
+    }
+    return Math.floor(diff / 10000);
+}
+
+async function sendFrameForRecognition(imageData) {
+    const dataUrl = canvas.toDataURL('image/png');
+    const response = await fetch('/face_recognition', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            image: dataUrl
+        })
+    });
+    const result = await response.json();
+    handleRecognitionResult(result);
+}
+
+function handleRecognitionResult(result) {
+    if (result.recognized) {
+        const {
+            employee_id,
+            employee_name,
+            employee_photo,
+            face_location
+        } = result;
+        
+        console.log("face_location: " + face_location);
+        // drawFaceFrame(face_location);
+        
+        video.pause();
+        confirmationPopup.style.display = 'block';
+        document.getElementById('employeeName').textContent = employee_name;
+        document.getElementById('employeePhoto').src = `/static/uploads/${employee_photo}`;
+
+        confirmButton.onclick = async () => {
+            // document.getElementById('confirmationPopup').style.display = 'none';
+            confirmationPopup.style.display = 'none';
+            await fetch('/confirm_employee', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    employee_id: employee_id
+                })
+            });
+            video.play(); // Continue the video stream
+            updateActiveEmployees(); // Update the active employees list
+        };
+
+
+        rejectButton.onclick = () => {
+            // Handle reject
+            confirmationPopup.style.display = 'none';
+            // Continue streaming
+            video.play(); // Continue the video stream
+        };
+    }
 }
 
 // Function to update the active employees list
@@ -44,37 +139,21 @@ async function updateActiveEmployees() {
     });
 }
 
-// Function to handle face recognition
-async function fetchFaceRecognition() {
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const imageData = canvas.toDataURL('image/jpeg');
-
-    const response = await fetch('/face_recognition', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: imageData })
-    });
-    const result = await response.json();
-
-    if (result.recognized) {
-        video.pause();
-        showConfirmationPopup(result);
-    }
-}
-
-// Initialize video stream
-navigator.mediaDevices.getUserMedia({ video: true })
-    .then(stream => {
-        video.srcObject = stream;
-        video.play();
-        setInterval(fetchFaceRecognition, 3000); // Check for face recognition every 5 seconds
-    })
-    .catch(error => console.error('Error accessing media devices.', error));
-
 // Function to periodically update active employees list
-setInterval(updateActiveEmployees, 10000); // Update every 60 seconds
+setInterval(updateActiveEmployees, 5000); // Update every 5 seconds
 
 // Initial call to populate active employees list
 updateActiveEmployees();
+
+
+function drawFaceFrame(face_location) {
+    const [top, right, bottom, left] = face_location;
+    ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+    ctx.strokeStyle = 'green';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(left, top, right - left, bottom - top);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Initial setup code here if needed
+});
