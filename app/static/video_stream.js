@@ -4,6 +4,7 @@ const ctx = canvas.getContext('2d');
 const confirmationPopup = document.getElementById('confirmationPopup');
 const confirmButton = document.getElementById('confirmButton');
 const rejectButton = document.getElementById('rejectButton');
+const h3 = document.getElementById('startWork');
 
 let lastImageData;
 let motionDetected = false;
@@ -35,7 +36,7 @@ function checkForMotion() {
         if (lastImageData) {
             const diff = detectMotion(lastImageData.data, imageData.data);
 
-            //Motion Threshold: Adjust the 800 threshold in the detectMotion function 
+            //Motion Threshold: Adjust the 800-1500 threshold in the detectMotion function 
             //based on your environment and sensitivity requirements.
             if (diff > 800) { // Motion threshold
                 if (!motionDetected) {
@@ -61,6 +62,7 @@ function detectMotion(data1, data2) {
         const b = data1[i + 2] - data2[i + 2];
         diff += Math.abs(r) + Math.abs(g) + Math.abs(b);
     }
+    //reduce motion sensitivity by 10 000. for human readability
     return Math.floor(diff / 10000);
 }
 
@@ -83,16 +85,23 @@ function handleRecognitionResult(result) {
     if (result.recognized) {
         const {
             employee_id,
+            start_count,
             employee_name,
             employee_photo,
             face_location
         } = result;
-        
+        console.log("START: " + start_count)
         console.log("face_location: " + face_location);
         // drawFaceFrame(face_location);
-        
+
         video.pause();
         confirmationPopup.style.display = 'block';
+        h3.innerHTML=" "
+        if (!start_count) 
+            h3.innerHTML = "Start Work?"
+        else
+            h3.innerHTML = "End Work?";
+        
         document.getElementById('employeeName').textContent = employee_name;
         document.getElementById('employeePhoto').src = `/static/uploads/${employee_photo}`;
 
@@ -140,7 +149,7 @@ async function updateActiveEmployees() {
 }
 
 // Function to periodically update active employees list
-setInterval(updateActiveEmployees, 5000); // Update every 5 seconds
+setInterval(updateActiveEmployees, 60000); // Update every 60 seconds
 
 // Initial call to populate active employees list
 updateActiveEmployees();

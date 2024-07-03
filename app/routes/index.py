@@ -38,7 +38,7 @@ active_employees = {}
 def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-start_count = False
+g_start_count = False
 
 @router.post("/face_recognition")
 async def face_recognition_endpoint(image: dict, db: Session = Depends(get_db)):
@@ -52,6 +52,7 @@ async def face_recognition_endpoint(image: dict, db: Session = Depends(get_db)):
 
     known_face_encodings, known_face_ids = load_known_faces(db)
     
+    #global g_start_count
     recognized = False
     for face_encoding, face_location in zip(face_encodings, face_locations):
         matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
@@ -65,6 +66,7 @@ async def face_recognition_endpoint(image: dict, db: Session = Depends(get_db)):
 
             return {
                 "recognized": recognized,
+                "start_count": g_start_count,
                 "face_location": face_location,
                 "employee_id": employee_id,
                 "employee_name": employee.name,
@@ -74,6 +76,7 @@ async def face_recognition_endpoint(image: dict, db: Session = Depends(get_db)):
 
     return {
         "recognized": recognized,
+        "start_count": g_start_count,
         "face_location": None,
         "active_employees": [{"id": id, "name": crud_employee.get_employee(db, id).name} for id in active_employees.keys()]
     }
@@ -84,7 +87,7 @@ async def confirm_employee(employee_id: dict, db: Session = Depends(get_db)):
     print(employee_id)
     _id = employee_id['employee_id']
     print(_id)
-
+    global g_start_count
     if _id in active_employees:
         # Stop counting
         start_time = active_employees.pop(_id)
@@ -93,16 +96,18 @@ async def confirm_employee(employee_id: dict, db: Session = Depends(get_db)):
         work_hour = WorkHour(employee_id=_id, date=start_time.date(), hours_worked=hours_worked)
         db.add(work_hour)
         db.commit()
+        g_start_count = False
     else:
         # Start counting
         active_employees[_id] = datetime.now()
+        g_start_count = True
 
-    if _id in active_employees:
-        raise HTTPException(status_code=400, detail="Employee already active")
+    # if _id in active_employees:
+    #     raise HTTPException(status_code=400, detail="Employee already active")
 #    active_employees[_id] = datetime.now()
-    print(f'Start: {start_count}')
+    print(f'Start: {g_start_count}')
     return {
-        "active_employees": [{"id": id,"start_count": start_count , "name": crud_employee.get_employee(db, id).name} for id in active_employees.keys()]
+        "active_employees": [{"id": id,"start_count": g_start_count , "name": crud_employee.get_employee(db, id).name} for id in active_employees.keys()]
     }
 
 @router.get("/get_active_employees")
