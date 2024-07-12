@@ -16,6 +16,7 @@
 # python --version
 python -m venv env/python
 source env/python/bin/activate
+apk add -y libgl1-mesa-dev
 pip install --upgrade pip
 pip install wheel
 pip install -r requirements.txt
