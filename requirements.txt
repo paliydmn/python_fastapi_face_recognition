@@ -7,10 +7,10 @@ aiofiles
 python-multipart
 face-recognition
 opencv-python-headless
-numpy
-python-dotenv
-setuptools
-opencv-python
+# numpy
+# python-dotenv
+# setuptools
+# opencv-python
 
 
 #fastapi==0.95.0
