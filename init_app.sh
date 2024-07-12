@@ -14,6 +14,9 @@
 # pip3 install --no-cache aws-sam-cli --upgrade
 # echo "================> CHECK PYTHON VERS: "
 # python --version
-pip install wheel
-pip install -r requirements.txt
-python init_db.py
+python3 -m venv env/python
+source env/python/bin/activate
+pip3 install --upgrade pip
+pip3 install wheel
+pip3 install -r requirements.txt
+python3 init_db.py
