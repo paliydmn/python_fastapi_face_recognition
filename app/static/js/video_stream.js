@@ -106,7 +106,6 @@ function handleRecognitionResult(result) {
         document.getElementById('employeePhoto').src = `/static/uploads/${employee_photo}`;
 
         confirmButton.onclick = async () => {
-            // document.getElementById('confirmationPopup').style.display = 'none';
             confirmationPopup.style.display = 'none';
             await fetch('/confirm_employee', {
                 method: 'POST',
