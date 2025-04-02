@@ -32,10 +32,13 @@ apt-get install -y python3 python3-dev python3-venv python3-pip build-essential 
 python3 -m venv env/python
 source env/python/bin/activate
 
-# Upgrade pip and install dependencies
-pip install --upgrade pip
+# Upgrade pip and setuptools
+pip install --upgrade pip setuptools
+
+# Install dependencies
 pip install wheel
 pip install -r requirements.txt
-
+echo "================> CHECK PYTHON VERS: "
+pip list
 # Initialize the database
 python app/init_db.py
