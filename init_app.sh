@@ -41,4 +41,7 @@ pip install -r requirements.txt
 echo "================> CHECK PYTHON VERS: "
 pip list
 # Initialize the database
-python app/init_db.py
+echo "Starting database initialization..."
+#python app/init_db.py
+python -m app.init_db
+echo "Database initialization completed."
