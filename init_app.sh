@@ -38,4 +38,4 @@ pip install wheel
 pip install -r requirements.txt
 
 # Initialize the database
-python init_db.py
+python app/init_db.py
