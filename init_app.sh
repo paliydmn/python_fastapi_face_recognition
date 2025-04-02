@@ -29,8 +29,8 @@ apt-get install -y python3 python3-dev python3-venv python3-pip build-essential 
     curl jq git libgl1-mesa-dev cmake
 
 # Create and activate a virtual environment
-python3 -m venv env/python
-source env/python/bin/activate
+# python3 -m venv env/python
+# source env/python/bin/activate
 
 # Upgrade pip and setuptools
 pip install --upgrade pip setuptools
