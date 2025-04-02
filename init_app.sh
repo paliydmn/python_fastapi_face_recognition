@@ -14,10 +14,28 @@
 # pip3 install --no-cache aws-sam-cli --upgrade
 # echo "================> CHECK PYTHON VERS: "
 # python --version
-python -m venv env/python
+# python -m venv env/python
+# source env/python/bin/activate
+# apk add libgl1-mesa-dev
+# pip install --upgrade pip
+# pip install wheel
+# pip install -r requirements.txt
+# python init_db.py
+
+#!/bin/sh
+# Install required packages
+apt-get update
+apt-get install -y python3 python3-dev python3-venv python3-pip build-essential \
+    curl jq git libgl1-mesa-dev cmake
+
+# Create and activate a virtual environment
+python3 -m venv env/python
 source env/python/bin/activate
-apk add libgl1-mesa-dev
+
+# Upgrade pip and install dependencies
 pip install --upgrade pip
 pip install wheel
 pip install -r requirements.txt
+
+# Initialize the database
 python init_db.py
